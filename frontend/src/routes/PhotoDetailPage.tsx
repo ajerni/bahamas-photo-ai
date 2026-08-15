@@ -5,13 +5,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
+  Lock,
   MapPin,
+  Pencil,
   Pin,
   RefreshCw,
   Save,
   Sparkles,
   Star,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import { assetUrl, type Photo } from "../api/client";
 import { useTrip } from "../trip/TripProvider";
@@ -40,12 +43,14 @@ export function PhotoDetailPage() {
   const photo = index === -1 ? null : ordered[index];
 
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setDraft(draftFrom(photo));
     setError(null);
+    setEditing(false);
   }, [photo?.id, photo?.analysis?.updated_at]);
 
   if (!photo) {
@@ -138,134 +143,197 @@ export function PhotoDetailPage() {
         </figure>
 
         <div className="detail-side">
-          <div className="detail-actions">
-            <button
-              type="button"
-              className={`chip-action ${photo.is_favorite ? "active" : ""}`}
-              disabled={busy}
-              onClick={() =>
-                void run(() =>
-                  savePhoto(photo.id, { is_favorite: !photo.is_favorite })
-                )
-              }
-            >
-              <Star size={15} aria-hidden="true" />
-              {photo.is_favorite ? "Kept" : "Keep"}
-            </button>
-            <button
-              type="button"
-              className={`chip-action ${isCover ? "active" : ""}`}
-              disabled={busy}
-              onClick={() =>
-                void run(() =>
-                  saveTrip({ cover_photo_id: isCover ? null : photo.id })
-                )
-              }
-            >
-              <Pin size={15} aria-hidden="true" />
-              {isCover ? "Cover" : "Make cover"}
-            </button>
-            <button
-              type="button"
-              className="chip-action"
-              disabled={busy}
-              onClick={() => void run(() => reanalyzePhoto(photo.id))}
-            >
-              <RefreshCw size={15} aria-hidden="true" />
-              Re-read
-            </button>
-            <button
-              type="button"
-              className="chip-action danger"
-              disabled={busy}
-              onClick={() => void handleDelete()}
-            >
-              <Trash2 size={15} aria-hidden="true" />
-              Delete
-            </button>
-          </div>
-
           {error ? <p className="app-error">{error}</p> : null}
 
-          <form
-            className="detail-editor"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void run(() => savePhoto(photo.id, toPayload(draft)));
-            }}
-          >
-            <span className="soft-kicker">Your words</span>
-            <label>
-              Caption
-              <input
-                value={draft.user_memory_caption}
-                placeholder={analysis?.memory_caption || photo.filename}
-                onChange={(event) =>
-                  setDraft({ ...draft, user_memory_caption: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              What happened
-              <textarea
-                rows={4}
-                value={draft.user_scene_summary}
-                placeholder={analysis?.scene_summary || "Describe the scene"}
-                onChange={(event) =>
-                  setDraft({ ...draft, user_scene_summary: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              Mood
-              <input
-                value={draft.user_mood}
-                placeholder={analysis?.mood || "How it felt"}
-                onChange={(event) =>
-                  setDraft({ ...draft, user_mood: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              Private note
-              <textarea
-                rows={3}
-                value={draft.user_note}
-                placeholder="Only for you"
-                onChange={(event) =>
-                  setDraft({ ...draft, user_note: event.target.value })
-                }
-              />
-            </label>
-            <button type="submit" className="primary-action" disabled={busy}>
-              <Save size={15} aria-hidden="true" />
-              Save
-            </button>
-          </form>
+          {editing ? (
+            <>
+              <form
+                className="detail-editor"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void run(async () => {
+                    await savePhoto(photo.id, toPayload(draft));
+                    setEditing(false);
+                  });
+                }}
+              >
+                <span className="soft-kicker">Your words</span>
+                <label>
+                  Caption
+                  <input
+                    value={draft.user_memory_caption}
+                    placeholder={analysis?.memory_caption || photo.filename}
+                    onChange={(event) =>
+                      setDraft({ ...draft, user_memory_caption: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  What happened
+                  <textarea
+                    rows={4}
+                    value={draft.user_scene_summary}
+                    placeholder={analysis?.scene_summary || "Describe the scene"}
+                    onChange={(event) =>
+                      setDraft({ ...draft, user_scene_summary: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Mood
+                  <input
+                    value={draft.user_mood}
+                    placeholder={analysis?.mood || "How it felt"}
+                    onChange={(event) =>
+                      setDraft({ ...draft, user_mood: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Private note
+                  <textarea
+                    rows={3}
+                    value={draft.user_note}
+                    placeholder="Only for you"
+                    onChange={(event) =>
+                      setDraft({ ...draft, user_note: event.target.value })
+                    }
+                  />
+                </label>
+                <div className="detail-editor-buttons">
+                  <button type="submit" className="primary-action" disabled={busy}>
+                    <Save size={15} aria-hidden="true" />
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-action"
+                    disabled={busy}
+                    onClick={() => {
+                      setDraft(draftFrom(photo));
+                      setEditing(false);
+                    }}
+                  >
+                    <X size={15} aria-hidden="true" />
+                    Cancel
+                  </button>
+                </div>
+              </form>
 
-          {analysis ? (
-            <div className="detail-model-read">
-              <span className="soft-kicker">
-                <Sparkles size={13} aria-hidden="true" />
-                What the model saw
-              </span>
-              <p>{analysis.scene_summary}</p>
-              <TagList label="Place" values={[analysis.place_type]} />
-              <TagList label="Doing" values={analysis.visible_activities} />
-              <TagList label="Objects" values={analysis.visible_objects} />
-              <TagList label="Details" values={analysis.sensory_details} />
-              {analysis.uncertainty_notes.length > 0 ? (
-                <TagList label="Unsure about" values={analysis.uncertainty_notes} />
-              ) : null}
-            </div>
+              <div className="detail-actions">
+                <button
+                  type="button"
+                  className={`chip-action ${isCover ? "active" : ""}`}
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() =>
+                      saveTrip({ cover_photo_id: isCover ? null : photo.id })
+                    )
+                  }
+                >
+                  <Pin size={15} aria-hidden="true" />
+                  {isCover ? "Cover" : "Make cover"}
+                </button>
+                <button
+                  type="button"
+                  className="chip-action"
+                  disabled={busy}
+                  onClick={() => void run(() => reanalyzePhoto(photo.id))}
+                >
+                  <RefreshCw size={15} aria-hidden="true" />
+                  Read again
+                </button>
+                <button
+                  type="button"
+                  className="chip-action danger"
+                  disabled={busy}
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2 size={15} aria-hidden="true" />
+                  Delete
+                </button>
+              </div>
+            </>
           ) : (
-            <div className="detail-model-read pending">
-              <Sparkles size={16} aria-hidden="true" />
-              <p>No memory yet. It arrives on its own, or press Re-read.</p>
-            </div>
+            <>
+              <article className="detail-memory">
+                {analysis ? (
+                  <>
+                    <h1>
+                      {analysis.user_memory_caption ||
+                        analysis.memory_caption ||
+                        photo.filename}
+                    </h1>
+                    <p>{analysis.user_scene_summary || analysis.scene_summary}</p>
+                    <div className="memory-facets">
+                      <Facet
+                        label="Mood"
+                        value={analysis.user_mood || analysis.mood}
+                      />
+                      <Facet label="Place" value={analysis.place_type} />
+                    </div>
+                    {analysis.user_note ? (
+                      <aside className="memory-note">
+                        <span className="soft-kicker">
+                          <Lock size={12} aria-hidden="true" />
+                          Private note
+                        </span>
+                        <p>{analysis.user_note}</p>
+                      </aside>
+                    ) : null}
+                    <div className="memory-tags">
+                      <TagList label="Doing" values={analysis.visible_activities} />
+                      <TagList label="Objects" values={analysis.visible_objects} />
+                      <TagList label="Details" values={analysis.sensory_details} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="detail-model-read pending">
+                    <Sparkles size={16} aria-hidden="true" />
+                    <p>No memory yet. It arrives on its own once the photo is read.</p>
+                  </div>
+                )}
+              </article>
+
+              <div className="detail-actions">
+                <button
+                  type="button"
+                  className={`chip-action ${photo.is_favorite ? "active" : ""}`}
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() =>
+                      savePhoto(photo.id, { is_favorite: !photo.is_favorite })
+                    )
+                  }
+                >
+                  <Star size={15} aria-hidden="true" />
+                  {photo.is_favorite ? "Kept" : "Keep"}
+                </button>
+                <button
+                  type="button"
+                  className="chip-action"
+                  onClick={() => setEditing(true)}
+                >
+                  <Pencil size={15} aria-hidden="true" />
+                  Edit
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Facet({ label, value }: { label: string; value: string | null }) {
+  if (!value) {
+    return null;
+  }
+  return (
+    <div className="facet">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
