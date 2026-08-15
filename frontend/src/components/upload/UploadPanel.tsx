@@ -4,14 +4,12 @@ import type { PhotoImportResponse } from "../../api/client";
 
 type UploadPanelProps = {
   disabled: boolean;
-  compact: boolean;
   importResult: PhotoImportResponse | null;
   onUpload: (files: FileList | File[]) => void;
 };
 
 export function UploadPanel({
   disabled,
-  compact,
   importResult,
   onUpload
 }: UploadPanelProps) {
@@ -53,12 +51,8 @@ export function UploadPanel({
   }
 
   return (
-    <div className={`upload-panel ${compact ? "compact" : ""}`}>
+    <div className="upload-panel">
       <div className="panel-heading">
-        <div>
-          <span className="soft-kicker">Photo import</span>
-          <h2>{compact ? "Add more" : "Add travel photos"}</h2>
-        </div>
         <button
           className="secondary-action"
           type="button"
@@ -79,7 +73,7 @@ export function UploadPanel({
         <span className="drop-icon">
           <Upload size={24} aria-hidden="true" />
         </span>
-        <strong>{compact ? "Add more photos" : "Drop travel photos here"}</strong>
+        <strong>Drop photos here</strong>
         <span>JPEG, PNG, and WebP only. EXIF metadata stays local.</span>
         <em>
           <LockKeyhole size={13} aria-hidden="true" />

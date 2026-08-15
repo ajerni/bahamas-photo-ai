@@ -10,6 +10,9 @@ def client(tmp_path, monkeypatch):
     upload_dir = tmp_path / "uploads"
     monkeypatch.setenv("PMM_DATABASE_URL", f"sqlite:///{db_path.as_posix()}")
     monkeypatch.setenv("PMM_UPLOAD_DIR", str(upload_dir))
+    # TestClient runs BackgroundTasks synchronously, so leaving this on would
+    # make every import test hit the real model.
+    monkeypatch.setenv("PMM_AUTO_ANALYZE_ON_IMPORT", "false")
 
     from backend.app.core.config import get_settings
     from backend.app.db.session import get_engine

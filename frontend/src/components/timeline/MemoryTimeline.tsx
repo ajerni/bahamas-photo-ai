@@ -1,26 +1,15 @@
+import { Link } from "react-router-dom";
 import { CalendarDays, MapPin, Sparkles, Star } from "lucide-react";
 import { assetUrl, type Photo } from "../../api/client";
 
-type MemoryTimelineProps = {
-  photos: Photo[];
-  selectedPhotoId: number | null;
-  spotlightPhotoId: number | null;
-  onSelectPhoto: (photoId: number) => void;
-};
-
-export function MemoryTimeline({
-  photos,
-  selectedPhotoId,
-  spotlightPhotoId,
-  onSelectPhoto
-}: MemoryTimelineProps) {
+export function MemoryTimeline({ photos }: { photos: Photo[] }) {
   if (photos.length === 0) {
     return (
       <section className="timeline-view empty">
         <CalendarDays size={28} aria-hidden="true" />
         <div>
-          <h2>No matching moments</h2>
-          <p>Adjust search or filters to bring photos back into the timeline.</p>
+          <h2>Nothing on the timeline</h2>
+          <p>Add photos from the menu and they land here in order.</p>
         </div>
       </section>
     );
@@ -29,54 +18,37 @@ export function MemoryTimeline({
   const groups = groupPhotos(photos);
 
   return (
-    <section className="timeline-view">
-      <div className="section-heading">
-        <div>
-          <span className="soft-kicker">Timeline</span>
-          <h2>When it happened</h2>
-        </div>
-      </div>
-      <div className="timeline-list">
-        {groups.map((group) => (
-          <section key={group.label} className="timeline-day">
-            <h3>{group.label}</h3>
-            {group.photos.map((photo) => (
-              <button
-                key={photo.id}
-                type="button"
-                className={`${photo.id === selectedPhotoId ? "selected" : ""} ${photo.id === spotlightPhotoId ? "spotlight" : ""}`}
-                onClick={() => onSelectPhoto(photo.id)}
-              >
-                <img src={assetUrl(photo.image_url)} alt="" />
-                <span>
-                  <em>{formatTime(photo.captured_at ?? photo.created_at)}</em>
-                  <strong>{photo.analysis?.memory_caption || photo.filename}</strong>
-                  <small>
-                    {photo.analysis ? (
-                      <>
-                        <Sparkles size={12} aria-hidden="true" />
-                        {photo.analysis.user_mood || photo.analysis.mood || "Remembered"}
-                      </>
-                    ) : (
-                      "Needs analysis"
-                    )}
-                  </small>
-                  {photo.analysis?.uncertainty_notes.length ? (
-                    <small>Uncertain evidence</small>
-                  ) : null}
-                  {photo.analysis?.user_note ? <small>{photo.analysis.user_note}</small> : null}
-                </span>
-                <span className="timeline-flags">
-                  {photo.is_favorite ? <Star size={14} aria-hidden="true" /> : null}
-                  <MapPin size={14} aria-hidden="true" />
-                  {photo.latitude !== null && photo.longitude !== null ? "GPS" : "No GPS"}
-                </span>
-              </button>
-            ))}
-          </section>
-        ))}
-      </div>
-    </section>
+    <div className="timeline-list">
+      {groups.map((group) => (
+        <section key={group.label} className="timeline-day">
+          <h3>{group.label}</h3>
+          {group.photos.map((photo) => (
+            <Link key={photo.id} to={`/photos/${photo.id}`}>
+              <img src={assetUrl(photo.image_url)} alt="" loading="lazy" />
+              <span>
+                <em>{formatTime(photo.captured_at ?? photo.created_at)}</em>
+                <strong>{photo.analysis?.memory_caption || photo.filename}</strong>
+                <small>
+                  {photo.analysis ? (
+                    <>
+                      <Sparkles size={12} aria-hidden="true" />
+                      {photo.analysis.user_mood || photo.analysis.mood || "Remembered"}
+                    </>
+                  ) : (
+                    "Still remembering"
+                  )}
+                </small>
+              </span>
+              <span className="timeline-flags">
+                {photo.is_favorite ? <Star size={14} aria-hidden="true" /> : null}
+                <MapPin size={14} aria-hidden="true" />
+                {photo.latitude !== null && photo.longitude !== null ? "GPS" : "No GPS"}
+              </span>
+            </Link>
+          ))}
+        </section>
+      ))}
+    </div>
   );
 }
 

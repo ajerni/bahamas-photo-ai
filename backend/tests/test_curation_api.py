@@ -98,7 +98,7 @@ def test_photo_favorite_and_memory_overrides_survive_analysis_rerun(client, monk
     assert reset.json()["analysis"]["memory_caption"] == "Second generated caption"
 
 
-def test_photo_memory_edit_requires_analysis(client):
+def test_photo_memory_edit_without_analysis_creates_one(client):
     trip = client.post("/api/trips", json={"title": "Porto"}).json()
     photo = _upload_photo(client, trip["id"])
 
@@ -107,8 +107,11 @@ def test_photo_memory_edit_requires_analysis(client):
         json={"user_memory_caption": "Before analysis"},
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Analyze this photo before editing memory"
+    assert response.status_code == 200
+    assert response.json()["analysis"]["memory_caption"] == "Before analysis"
+
+    reload = client.get(f"/api/trips/{trip['id']}").json()
+    assert reload["photos"][0]["analysis"]["user_memory_caption"] == "Before analysis"
 
 
 def test_trip_memory_override_and_markdown_export(client, monkeypatch):

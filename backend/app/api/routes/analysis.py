@@ -52,10 +52,49 @@ def analyze_trip(
     trip: Trip = Depends(get_trip_or_404),
     session: Session = Depends(get_session),
 ) -> AnalysisJobRead:
-    job = create_analysis_job(session, int(trip.id), (payload or AnalyzeTripRequest()).mode)
-
-    background_tasks.add_task(run_analysis_job, int(job.id), get_gemma_client)
+    job = queue_analysis_job(
+        session,
+        background_tasks,
+        int(trip.id),
+        (payload or AnalyzeTripRequest()).mode,
+    )
     return AnalysisJobRead.model_validate(job)
+
+
+ACTIVE_JOB_STATUSES = ("queued", "running")
+
+
+def queue_analysis_job(
+    session: Session,
+    background_tasks: BackgroundTasks,
+    trip_id: int,
+    mode: str = "all",
+) -> AnalysisJob:
+    """Return the in-flight job for the trip, or create and schedule a new one.
+
+    Analysis has no per-photo locking, so overlapping jobs would process the
+    same photos twice. Batch uploads join the running job instead of starting
+    a second one.
+    """
+    active = session.exec(
+        select(AnalysisJob)
+        .where(
+            AnalysisJob.trip_id == trip_id,
+            AnalysisJob.status.in_(ACTIVE_JOB_STATUSES),
+        )
+        .order_by(AnalysisJob.created_at.desc())
+    ).first()
+    if active is not None:
+        active.total_steps = _analysis_total_steps(session, trip_id, active.mode)
+        active.updated_at = utc_now()
+        session.add(active)
+        session.commit()
+        session.refresh(active)
+        return active
+
+    job = create_analysis_job(session, trip_id, mode)
+    background_tasks.add_task(run_analysis_job, int(job.id), get_gemma_client)
+    return job
 
 
 def create_analysis_job(session: Session, trip_id: int, mode: str = "all") -> AnalysisJob:

@@ -137,6 +137,7 @@ export type PhotoImportResponse = {
   stored_count: number;
   duplicate_count: number;
   rejected_count: number;
+  job: AnalysisJob | null;
 };
 
 export async function getHealth(): Promise<HealthResponse> {
@@ -282,6 +283,16 @@ export async function deletePhoto(photoId: number): Promise<void> {
 
 export async function clearTripAnalysis(tripId: number): Promise<void> {
   await requestNoContent(`/api/trips/${tripId}/analysis`, { method: "DELETE" });
+}
+
+export async function deleteAllTripPhotos(tripId: number): Promise<void> {
+  await requestNoContent(`/api/trips/${tripId}/photos`, { method: "DELETE" });
+}
+
+export async function analyzePhoto(photoId: number): Promise<PhotoAnalysis> {
+  return request<PhotoAnalysis>(`/api/photos/${photoId}/analyze`, {
+    method: "POST"
+  });
 }
 
 export async function exportTripMarkdown(

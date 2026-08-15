@@ -1,67 +1,39 @@
 import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
+import { BrainCircuit, MessageCircle, Send } from "lucide-react";
 import {
-  BrainCircuit,
-  CircleAlert,
-  Download,
-  LockKeyhole,
-  MessageCircle,
-  Send,
-  Sparkles
-} from "lucide-react";
-import type {
-  AnalysisJob,
-  AskResponse,
-  HealthResponse,
-  Photo,
-  TripQuestion,
-  TripMemory
+  assetUrl,
+  type AskResponse,
+  type Photo,
+  type TripQuestion
 } from "../../api/client";
-import { assetUrl } from "../../api/client";
-import {
-  jobDetail,
-  jobPercent,
-  jobRemaining,
-  jobStage,
-  jobStepCount
-} from "../story/jobStatus";
 
 type MemoryCompanionProps = {
-  health: HealthResponse | null;
-  healthError: string | null;
   askDisabled: boolean;
-  job: AnalysisJob | null;
-  tripMemory: TripMemory | null;
+  pending: boolean;
   askResponse: AskResponse | null;
+  askError: string | null;
   questions: TripQuestion[];
   photos: Photo[];
-  exportDisabled: boolean;
   onAsk: (question: string) => void;
-  onSelectEvidence: (photoId: number) => void;
-  onExportMarkdown: () => void;
-  onExportZip: () => void;
 };
 
+const PROMPTS = [
+  "What did I seem drawn to on this trip?",
+  "Which moments feel most memorable?",
+  "What should I revisit next time?"
+];
+
 export function MemoryCompanion({
-  health,
-  healthError,
   askDisabled,
-  job,
-  tripMemory,
+  pending,
   askResponse,
+  askError,
   questions,
   photos,
-  exportDisabled,
-  onAsk,
-  onSelectEvidence,
-  onExportMarkdown,
-  onExportZip
+  onAsk
 }: MemoryCompanionProps) {
-  const [question, setQuestion] = useState("What did I seem drawn to on this trip?");
-  const prompts = [
-    "What did I seem drawn to on this trip?",
-    "Which moments feel most memorable?",
-    "What should I revisit next time?"
-  ];
+  const [question, setQuestion] = useState(PROMPTS[0]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,63 +43,9 @@ export function MemoryCompanion({
   }
 
   return (
-    <aside className="memory-companion">
-      <div className="companion-heading">
-        <div className="companion-title-row">
-          <div>
-            <span className="soft-kicker">Ask this trip</span>
-            <h2>Talk to your memories</h2>
-          </div>
-          <details className="companion-export-menu">
-            <summary aria-label="Export memory">
-              <Download size={16} aria-hidden="true" />
-            </summary>
-            <div>
-              <button type="button" disabled={exportDisabled} onClick={onExportMarkdown}>
-                Markdown
-              </button>
-              <button type="button" disabled={exportDisabled} onClick={onExportZip}>
-                ZIP dossier
-              </button>
-            </div>
-          </details>
-        </div>
-        <p>
-          {health ? (
-            <>
-              <LockKeyhole size={13} aria-hidden="true" />
-              Local memory store ready
-            </>
-          ) : (
-            healthError ?? "Backend offline"
-          )}
-        </p>
-      </div>
-
-      {job ? <CompanionProgress job={job} /> : null}
-
-      <div className="reflection-card">
-        {tripMemory ? (
-          <>
-            <span className="soft-kicker">Reflection</span>
-            <p>{tripMemory.user_narrative_summary || tripMemory.narrative_summary}</p>
-            {tripMemory.user_note ? <em>{tripMemory.user_note}</em> : null}
-            <EvidenceButtons
-              ids={tripMemory.evidence_photo_ids}
-              photos={photos}
-              onSelectEvidence={onSelectEvidence}
-            />
-          </>
-        ) : (
-          <div className="reflection-empty">
-            <Sparkles size={20} aria-hidden="true" />
-            <p>Develop memories from the cover, then ask grounded questions here.</p>
-          </div>
-        )}
-      </div>
-
+    <div className="memory-companion">
       <div className="prompt-row" aria-label="Suggested questions">
-        {prompts.map((prompt) => (
+        {PROMPTS.map((prompt) => (
           <button
             key={prompt}
             type="button"
@@ -148,29 +66,35 @@ export function MemoryCompanion({
           disabled={askDisabled}
           placeholder="Ask about this trip..."
         />
-        <button type="submit" disabled={askDisabled || !question.trim()} title="Ask trip">
+        <button
+          type="submit"
+          disabled={askDisabled || pending || !question.trim()}
+          title="Ask trip"
+        >
           <Send size={16} aria-hidden="true" />
         </button>
       </form>
 
       <div className="companion-answer">
-        {askResponse ? (
+        {askError ? <p className="app-error">{askError}</p> : null}
+        {pending ? (
+          <div className="answer-waiting">
+            <BrainCircuit size={20} aria-hidden="true" />
+            <p>Reading through the memories…</p>
+          </div>
+        ) : askResponse ? (
           <>
             <span className="soft-kicker">Grounded answer</span>
             <p>{askResponse.answer}</p>
-            <EvidenceButtons
-              ids={askResponse.evidence_photo_ids}
-              photos={photos}
-              onSelectEvidence={onSelectEvidence}
-            />
+            <EvidenceLinks ids={askResponse.evidence_photo_ids} photos={photos} />
           </>
         ) : (
           <div className="answer-waiting">
             <BrainCircuit size={20} aria-hidden="true" />
             <p>
               {askDisabled
-                ? "Trip Q&A unlocks after memories are developed."
-                : "Ask a question and Gemma will answer from the stored memories."}
+                ? "Questions unlock once the trip has memories."
+                : "Ask anything — answers come only from what your photos show."}
             </p>
           </div>
         )}
@@ -179,86 +103,26 @@ export function MemoryCompanion({
       {questions.length > 0 ? (
         <div className="question-history">
           <span className="soft-kicker">Asked before</span>
-          {questions.slice(-3).reverse().map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setQuestion(item.question)}
-            >
-              <strong>{item.question}</strong>
-              <span>{item.answer}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <details className="local-facts">
-        <summary>Local facts</summary>
-        <dl>
-          <div>
-            <dt>Model</dt>
-            <dd>
-              {health
-                ? health.model_available
-                  ? health.model
-                  : health.model_status
-                : "Offline"}
-            </dd>
-          </div>
-          <div>
-            <dt>Coordinates</dt>
-            <dd>EXIF only</dd>
-          </div>
-          <div>
-            <dt>Images</dt>
-            <dd>JPEG, PNG, WebP</dd>
-          </div>
-          <div>
-            <dt>Memory</dt>
-            <dd>Local SQLite</dd>
-          </div>
-        </dl>
-      </details>
-    </aside>
-  );
-}
-
-function CompanionProgress({ job }: { job: AnalysisJob }) {
-  const percent = jobPercent(job);
-  const detail = jobDetail(job);
-  const stepCount = jobStepCount(job);
-  const remaining = jobRemaining(job);
-
-  return (
-    <div className={`companion-progress ${job.status}`}>
-      <div>
-        <strong>{jobStage(job)}</strong>
-        <span>{percent}%</span>
-      </div>
-      <p className="job-step-line">
-        {job.error ? <CircleAlert size={14} aria-hidden="true" /> : null}
-        {detail}
-      </p>
-      <progress max={100} value={percent} />
-      {stepCount || remaining ? (
-        <div className="job-meta-row">
-          {stepCount ? <span>{stepCount}</span> : null}
-          {remaining ? <span>{remaining}</span> : null}
+          {[...questions]
+            .slice(-5)
+            .reverse()
+            .map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setQuestion(item.question)}
+              >
+                <strong>{item.question}</strong>
+                <span>{item.answer}</span>
+              </button>
+            ))}
         </div>
       ) : null}
     </div>
   );
 }
 
-function EvidenceButtons({
-  ids,
-  photos,
-  onSelectEvidence
-}: {
-  ids: number[];
-  photos: Photo[];
-  onSelectEvidence: (photoId: number) => void;
-}) {
+function EvidenceLinks({ ids, photos }: { ids: number[]; photos: Photo[] }) {
   if (ids.length === 0) {
     return null;
   }
@@ -269,7 +133,7 @@ function EvidenceButtons({
       {ids.map((id) => {
         const photo = photos.find((item) => item.id === id);
         return (
-          <button key={id} type="button" onClick={() => onSelectEvidence(id)}>
+          <Link key={id} to={`/photos/${id}`}>
             {photo ? (
               <img
                 src={assetUrl(photo.image_url)}
@@ -277,7 +141,7 @@ function EvidenceButtons({
               />
             ) : null}
             <em>#{id}</em>
-          </button>
+          </Link>
         );
       })}
     </div>

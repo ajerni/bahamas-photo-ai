@@ -1,13 +1,33 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlmodel import Session, select
+
+# Imported as a module so tests can monkeypatch analysis.get_gemma_client.
+from backend.app.api.routes import analysis as analysis_routes
 
 from backend.app.api.deps import get_photo_or_404, get_trip_or_404
 from backend.app.api.serializers import photo_to_read
 from backend.app.core.config import get_settings
-from backend.app.db.models import Photo, PhotoAnalysis, Trip, utc_now
+from backend.app.db.models import (
+    Photo,
+    PhotoAnalysis,
+    Trip,
+    TripMemory,
+    TripQuestion,
+    utc_now,
+)
 from backend.app.db.session import get_session
+from backend.app.schemas.job import AnalysisJobRead
 from backend.app.schemas.photo import (
     PhotoImportResponse,
     PhotoImportResult,
@@ -68,6 +88,7 @@ async def upload_trip_photos(
 
 @router.post("/trips/{trip_id}/photos/import", response_model=PhotoImportResponse)
 async def import_trip_photos(
+    background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...),
     trip: Trip = Depends(get_trip_or_404),
     session: Session = Depends(get_session),
@@ -137,11 +158,21 @@ async def import_trip_photos(
             )
         )
 
+    stored_count = sum(1 for item in results if item.status == "stored")
+
+    job = None
+    if stored_count > 0 and settings.auto_analyze_on_import:
+        record = analysis_routes.queue_analysis_job(
+            session, background_tasks, trip_id, "missing"
+        )
+        job = AnalysisJobRead.model_validate(record)
+
     return PhotoImportResponse(
         results=results,
-        stored_count=sum(1 for item in results if item.status == "stored"),
+        stored_count=stored_count,
         duplicate_count=sum(1 for item in results if item.status == "duplicate"),
         rejected_count=sum(1 for item in results if item.status == "rejected"),
+        job=job,
     )
 
 
@@ -155,6 +186,38 @@ def list_trip_photos(
         select(Photo).where(Photo.trip_id == trip_id).order_by(Photo.created_at)
     ).all()
     return [photo_to_read(photo) for photo in photos]
+
+
+@router.delete("/trips/{trip_id}/photos", status_code=status.HTTP_204_NO_CONTENT)
+def delete_trip_photos(
+    trip: Trip = Depends(get_trip_or_404),
+    session: Session = Depends(get_session),
+) -> Response:
+    trip_id = int(trip.id)
+    photos = session.exec(select(Photo).where(Photo.trip_id == trip_id)).all()
+    stored_paths = [photo.stored_path for photo in photos]
+
+    for photo in photos:
+        analysis = session.get(PhotoAnalysis, int(photo.id))
+        if analysis is not None:
+            session.delete(analysis)
+        session.delete(photo)
+
+    memory = session.get(TripMemory, trip_id)
+    if memory is not None:
+        session.delete(memory)
+    for question in session.exec(
+        select(TripQuestion).where(TripQuestion.trip_id == trip_id)
+    ).all():
+        session.delete(question)
+
+    trip.cover_photo_id = None
+    session.add(trip)
+    session.commit()
+
+    for stored_path in stored_paths:
+        delete_stored_photo(stored_path)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/photos/{photo_id}", response_model=PhotoRead)
@@ -175,10 +238,7 @@ def update_photo(
     if memory_fields.intersection(payload.model_fields_set):
         analysis = session.get(PhotoAnalysis, int(photo.id))
         if analysis is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Analyze this photo before editing memory",
-            )
+            analysis = PhotoAnalysis(photo_id=int(photo.id))
         for field_name in memory_fields.intersection(payload.model_fields_set):
             setattr(analysis, field_name, _clean_optional(getattr(payload, field_name)))
         analysis.updated_at = utc_now()

@@ -19,3 +19,6 @@ backend/local_data/
 .env
 .env.*
 !.env.example
+
+# own
+redesign.md

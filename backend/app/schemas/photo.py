@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.app.schemas.analysis import PhotoAnalysisRead
+from backend.app.schemas.job import AnalysisJobRead
 
 
 class PhotoRead(BaseModel):
@@ -48,3 +49,4 @@ class PhotoImportResponse(BaseModel):
     stored_count: int
     duplicate_count: int
     rejected_count: int
+    job: AnalysisJobRead | None = None

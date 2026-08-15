@@ -1,4 +1,13 @@
-import type { AnalysisJob } from "../../api/client";
+import type { AnalysisJob } from "../api/client";
+
+export function isJobActive(job: AnalysisJob | null): boolean {
+  return (
+    job !== null &&
+    (job.status === "queued" ||
+      job.status === "running" ||
+      job.status === "cancel_requested")
+  );
+}
 
 export function jobPercent(job: AnalysisJob): number {
   if (job.total_steps > 0) {
@@ -12,24 +21,18 @@ export function jobPercent(job: AnalysisJob): number {
 
 export function jobStage(job: AnalysisJob): string {
   if (job.status === "completed") {
-    return "Ready";
+    return "Memories ready";
   }
   if (job.status === "failed") {
-    return "Needs attention";
+    return "Something went wrong";
   }
   if (job.status === "canceled") {
-    return "Canceled";
+    return "Stopped";
   }
   if (job.status === "cancel_requested") {
-    return "Canceling";
+    return "Stopping";
   }
-  if (job.completed_steps <= 0) {
-    return "Reading photos";
-  }
-  if (job.total_steps > 0 && job.completed_steps >= job.total_steps - 1) {
-    return "Writing trip memory";
-  }
-  return "Finding moments";
+  return "Remembering your photos";
 }
 
 export function jobDetail(job: AnalysisJob): string {
@@ -44,16 +47,5 @@ export function jobStepCount(job: AnalysisJob): string | null {
     return null;
   }
   const completed = Math.min(job.completed_steps, job.total_steps);
-  return `${completed} of ${job.total_steps} workflow steps`;
-}
-
-export function jobRemaining(job: AnalysisJob): string | null {
-  if (job.total_steps <= 0 || job.status === "completed") {
-    return null;
-  }
-  const remaining = Math.max(job.total_steps - job.completed_steps, 0);
-  if (remaining === 0) {
-    return "Finishing up";
-  }
-  return `${remaining} step${remaining === 1 ? "" : "s"} left`;
+  return `${completed} of ${job.total_steps}`;
 }

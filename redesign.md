@@ -1,4 +1,4 @@
-#I want you to redesign this app to be more of a "one project / one trip" showcase version rather than a geraral app that can create new trips. Here is what to change:
+#I want you to redesign this app to be more of a "one project / one trip" showcase version rather than a geraral app that can create new trips. Important are showcasing the photos and texts, timlene, map and chat. Here is what to change:
 
 ## General:
  - when new photos are uploaded, automatically the processing (creating texts/memories) has to start (no more separate Developping... / finding moments... / creating memries step)
@@ -8,6 +8,7 @@
 - remove the left column (add new trip not needed anymore)
 - instead of the 3 banners on the top right, make one menu button there (this burger icon thiing for all screen sizes)
 - Read / Explore / Refine / Ask - move these functionalities to a main menu bar on top (refine to be handled separately on items detail page - see Handling + Structure below)
+- options for refine and delete photo on the memory details page level
 - Mobile friendly / looking fresh and modern on all screen sizes.
 
 ## Menu:

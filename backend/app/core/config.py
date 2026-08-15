@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     workflow_max_image_edge_px: int = 1280
     workflow_retry_invalid_json: int = 1
     workflow_max_qa_photos: int = 60
+    auto_analyze_on_import: bool = True
     prompt_version: str = "travel-memory-v1"
 
     model_config = SettingsConfigDict(
