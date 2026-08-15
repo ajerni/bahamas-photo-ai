@@ -4,28 +4,115 @@
   --font-editorial: Charter, "Iowan Old Style", "Palatino Linotype", Palatino,
     Georgia, ui-serif, serif;
 
-  --bg: #0b0d10;
-  --bg-raise: #14171c;
-  --bg-card: #1a1e24;
-  --line: #262b33;
-  --line-strong: #39404a;
-
-  --ink: #f2efe9;
-  --ink-soft: #c3c8d0;
-  --muted: #7d8794;
-
-  --turquoise: #37d3c4;
-  --turquoise-deep: #12a396;
-  --sand: #e8c79a;
-  --sand-deep: #c79a5f;
-  --danger: #e0614a;
-
-  --glass: rgba(16, 19, 24, 0.72);
   --glass-blur: 18px;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
-  --glow: 0 0 0 1px rgba(55, 211, 196, 0.25), 0 18px 50px rgba(0, 0, 0, 0.6);
-
   --radius: 14px;
   --radius-sm: 9px;
   --nav-height: 68px;
+
+  /* Captions sit on top of photos, so these stay dark in every theme. */
+  --overlay-scrim: linear-gradient(
+    180deg,
+    rgba(8, 14, 16, 0.05) 0%,
+    rgba(8, 14, 16, 0.9) 88%
+  );
+  --overlay-scrim-soft: linear-gradient(180deg, transparent, rgba(8, 14, 16, 0.88));
+  --overlay-chip: rgba(8, 14, 16, 0.62);
+  --backdrop: rgba(6, 12, 14, 0.62);
+  --stage-bg: #0a1113;
+
+  /* Text drawn on the scrims above, so it stays light in every theme. */
+  --on-overlay: #f4f1ea;
+  --on-overlay-soft: #d6dedd;
+  --on-overlay-accent: #3fdcca;
+  --on-overlay-sand: #f0cfa2;
+
+  /* The basemap is light in both themes, so Leaflet chrome is too. */
+  --map-canvas: #dfe6e4;
+  --map-surface: #ffffff;
+  --map-ink: #16211f;
+  --map-muted: #6b7a7d;
+  --map-line: #d3dbd9;
+  --map-accent: #0c8578;
+  --map-accent-ring: rgba(12, 133, 120, 0.28);
+}
+
+/* Dark is the base so a no-JS render still looks intentional. */
+:root {
+  --bg: #0e1518;
+  --bg-raise: #151f22;
+  --bg-card: #1b262a;
+  --line: #29373b;
+  --line-strong: #3c4d52;
+
+  --ink: #f4f1ea;
+  --ink-soft: #cdd6d5;
+  --muted: #8b9b9c;
+
+  --turquoise: #3fdcca;
+  --turquoise-deep: #14a99a;
+  --sand: #f0cfa2;
+  --sand-deep: #c79a5f;
+  --danger: #e0614a;
+
+  --on-accent: #06211f;
+
+  --accent-soft: rgba(63, 220, 202, 0.1);
+  --accent-soft-strong: rgba(63, 220, 202, 0.16);
+  --accent-line: rgba(63, 220, 202, 0.28);
+  --sand-soft: rgba(240, 207, 162, 0.1);
+  --sand-line: rgba(240, 207, 162, 0.28);
+  --danger-soft: rgba(224, 97, 74, 0.1);
+  --danger-line: rgba(224, 97, 74, 0.34);
+  --focus-ring: rgba(63, 220, 202, 0.18);
+
+  --nav-hover: rgba(255, 255, 255, 0.06);
+  --nav-highlight: rgba(255, 255, 255, 0.07);
+  --body-glow-1: rgba(63, 220, 202, 0.14);
+  --body-glow-2: rgba(240, 207, 162, 0.09);
+
+  --glass: rgba(19, 28, 31, 0.68);
+  --shadow: 0 24px 70px rgba(3, 10, 12, 0.5);
+  --shadow-soft: 0 10px 30px rgba(3, 10, 12, 0.35);
+  --glow: 0 0 0 1px rgba(63, 220, 202, 0.22), 0 18px 50px rgba(3, 10, 12, 0.55);
+}
+
+/* Overrides only. --overlay-*, --backdrop, --stage-bg and --map-* stay as set
+   above: they sit on photos or on the light basemap, not on the page. */
+[data-theme="light"] {
+  --bg: #f7f7f4;
+  --bg-raise: #ffffff;
+  --bg-card: #ffffff;
+  --line: #e2e6e3;
+  --line-strong: #cbd3d0;
+
+  --ink: #16211f;
+  --ink-soft: #47555a;
+  --muted: #78868a;
+
+  --turquoise: #0f9b8e;
+  --turquoise-deep: #0b7d72;
+  --sand: #c08a3e;
+  --sand-deep: #9a6c2c;
+  --danger: #c4432c;
+
+  --on-accent: #ffffff;
+
+  --accent-soft: rgba(15, 155, 142, 0.09);
+  --accent-soft-strong: rgba(15, 155, 142, 0.14);
+  --accent-line: rgba(15, 155, 142, 0.3);
+  --sand-soft: rgba(192, 138, 62, 0.1);
+  --sand-line: rgba(192, 138, 62, 0.3);
+  --danger-soft: rgba(196, 67, 44, 0.09);
+  --danger-line: rgba(196, 67, 44, 0.32);
+  --focus-ring: rgba(15, 155, 142, 0.2);
+
+  --nav-hover: rgba(22, 33, 31, 0.06);
+  --nav-highlight: rgba(255, 255, 255, 0.85);
+  --body-glow-1: rgba(15, 155, 142, 0.11);
+  --body-glow-2: rgba(192, 138, 62, 0.09);
+
+  --glass: rgba(252, 252, 250, 0.76);
+  --shadow: 0 22px 55px rgba(22, 33, 31, 0.13);
+  --shadow-soft: 0 6px 18px rgba(22, 33, 31, 0.08);
+  --glow: 0 0 0 1px rgba(15, 155, 142, 0.22), 0 16px 40px rgba(22, 33, 31, 0.12);
 }

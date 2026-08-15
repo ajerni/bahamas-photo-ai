@@ -16,8 +16,8 @@ body {
   min-width: 320px;
   color: var(--ink);
   background:
-    radial-gradient(1100px 620px at 82% -12%, rgba(55, 211, 196, 0.09), transparent 62%),
-    radial-gradient(900px 520px at 6% 4%, rgba(232, 199, 154, 0.06), transparent 60%),
+    radial-gradient(1100px 620px at 82% -12%, var(--body-glow-1), transparent 64%),
+    radial-gradient(900px 520px at 6% 4%, var(--body-glow-2), transparent 62%),
     var(--bg);
   background-attachment: fixed;
   font-family: var(--font-ui);
@@ -100,7 +100,7 @@ textarea {
 input:focus,
 textarea:focus {
   border-color: var(--turquoise-deep);
-  box-shadow: 0 0 0 3px rgba(55, 211, 196, 0.14);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 input::placeholder,
@@ -180,7 +180,7 @@ textarea::placeholder {
 }
 
 .primary-action {
-  color: #06211f;
+  color: var(--on-accent);
   background: linear-gradient(135deg, var(--turquoise), var(--turquoise-deep));
 }
 
@@ -192,14 +192,14 @@ textarea::placeholder {
 }
 
 .chip-action.active {
-  color: #06211f;
+  color: var(--on-accent);
   background: var(--sand);
   border-color: var(--sand);
 }
 
 .chip-action.danger {
   color: var(--danger);
-  border-color: rgba(224, 97, 74, 0.4);
+  border-color: var(--danger-line);
 }
 
 .ghost-action {
@@ -219,8 +219,8 @@ textarea::placeholder {
 
 .danger-action {
   color: var(--danger);
-  background: rgba(224, 97, 74, 0.08);
-  border-color: rgba(224, 97, 74, 0.35);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
 }
 
 .tag-cloud {
@@ -262,8 +262,8 @@ textarea::placeholder {
   padding: 0.65rem 0.85rem;
   font-size: 0.86rem;
   color: var(--danger);
-  background: rgba(224, 97, 74, 0.08);
-  border: 1px solid rgba(224, 97, 74, 0.3);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
   border-radius: var(--radius-sm);
 }
 
@@ -313,8 +313,10 @@ textarea::placeholder {
   z-index: 40;
   background: var(--glass);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  /* Inset highlight lifts the bar off the page instead of reading as a flat slab. */
+  box-shadow: inset 0 1px 0 var(--nav-highlight), var(--shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
 }
 
 .glass-nav-inner {
@@ -359,12 +361,13 @@ textarea::placeholder {
 
 .nav-links a:hover {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--nav-hover);
 }
 
 .nav-links a.active {
   color: var(--turquoise);
-  background: rgba(55, 211, 196, 0.12);
+  background: linear-gradient(135deg, var(--accent-soft-strong), var(--sand-soft));
+  box-shadow: inset 0 0 0 1px var(--accent-line);
 }
 
 .nav-actions {
@@ -374,7 +377,8 @@ textarea::placeholder {
   margin-left: auto;
 }
 
-.burger {
+.burger,
+.theme-toggle {
   display: grid;
   place-items: center;
   width: 40px;
@@ -383,9 +387,14 @@ textarea::placeholder {
   background: var(--bg-card);
   border: 1px solid var(--line-strong);
   border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
 }
 
-.burger:hover {
+.burger:hover,
+.theme-toggle:hover {
+  color: var(--turquoise);
+  background: var(--accent-soft);
   border-color: var(--turquoise-deep);
 }
 
@@ -398,17 +407,17 @@ textarea::placeholder {
 
 .health-dot.ready span[aria-hidden] {
   background: var(--turquoise);
-  box-shadow: 0 0 0 4px rgba(55, 211, 196, 0.16);
+  box-shadow: 0 0 0 4px var(--accent-soft-strong);
 }
 
 .health-dot.warning span[aria-hidden] {
   background: var(--sand);
-  box-shadow: 0 0 0 4px rgba(232, 199, 154, 0.16);
+  box-shadow: 0 0 0 4px var(--sand-line);
 }
 
 .health-dot.offline span[aria-hidden] {
   background: var(--danger);
-  box-shadow: 0 0 0 4px rgba(224, 97, 74, 0.16);
+  box-shadow: 0 0 0 4px var(--danger-soft);
 }
 
 /* ---------- ambient job progress ---------- */
@@ -487,7 +496,7 @@ textarea::placeholder {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(4, 6, 9, 0.66);
+  background: var(--backdrop);
   backdrop-filter: blur(4px);
   animation: fade 0.2s ease both;
 }
@@ -586,7 +595,7 @@ textarea::placeholder {
   padding: 0.6rem 0.8rem;
   font-size: 0.83rem;
   color: var(--turquoise);
-  background: rgba(55, 211, 196, 0.08);
+  background: var(--accent-soft);
   border-radius: var(--radius-sm);
 }
 
@@ -639,7 +648,7 @@ textarea::placeholder {
 
 .drop-zone:hover,
 .drop-zone.drag-active {
-  background: rgba(55, 211, 196, 0.06);
+  background: var(--accent-soft);
   border-color: var(--turquoise-deep);
 }
 
@@ -739,7 +748,7 @@ textarea::placeholder {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(180deg, rgba(11, 13, 16, 0.15) 0%, rgba(11, 13, 16, 0.92) 88%);
+  background: var(--overlay-scrim);
 }
 
 .trip-hero-body {
@@ -753,6 +762,19 @@ textarea::placeholder {
 .trip-hero-body p {
   max-width: 62ch;
   color: var(--ink-soft);
+}
+
+/* Only the cover variant draws the dark scrim, so only it needs light text. */
+.trip-hero.has-cover .trip-hero-body {
+  color: var(--on-overlay);
+}
+
+.trip-hero.has-cover .trip-hero-body p {
+  color: var(--on-overlay-soft);
+}
+
+.trip-hero.has-cover .soft-kicker {
+  color: var(--on-overlay-accent);
 }
 
 .stat-strip {
@@ -791,8 +813,8 @@ textarea::placeholder {
   padding: 0.6rem 0.85rem;
   font-size: 0.83rem;
   color: var(--sand);
-  background: rgba(232, 199, 154, 0.08);
-  border: 1px solid rgba(232, 199, 154, 0.25);
+  background: var(--sand-soft);
+  border: 1px solid var(--sand-line);
   border-radius: var(--radius-sm);
 }
 
@@ -914,7 +936,7 @@ textarea::placeholder {
 }
 
 .filter-chips button.active {
-  color: #06211f;
+  color: var(--on-accent);
   background: var(--turquoise);
   border-color: var(--turquoise);
 }
@@ -972,13 +994,13 @@ textarea::placeholder {
   display: grid;
   gap: 0.15rem;
   padding: 1.75rem 0.75rem 0.7rem;
-  background: linear-gradient(180deg, transparent, rgba(6, 8, 11, 0.9));
+  background: var(--overlay-scrim-soft);
 }
 
 .mosaic-photo-button strong {
   overflow: hidden;
   font-size: 0.82rem;
-  color: var(--ink);
+  color: var(--on-overlay);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -989,7 +1011,7 @@ textarea::placeholder {
   align-items: center;
   font-size: 0.7rem;
   font-style: normal;
-  color: var(--turquoise);
+  color: var(--on-overlay-accent);
 }
 
 .mosaic-badges {
@@ -999,8 +1021,8 @@ textarea::placeholder {
   display: flex;
   gap: 0.3rem;
   padding: 0.25rem 0.4rem;
-  color: var(--sand);
-  background: rgba(6, 8, 11, 0.6);
+  color: var(--on-overlay-sand);
+  background: var(--overlay-chip);
   border-radius: 999px;
   backdrop-filter: blur(6px);
 }
@@ -1091,11 +1113,15 @@ textarea::placeholder {
 
 /* ---------- map ---------- */
 
+/* The basemap is light in every theme, so Leaflet's own chrome below is styled
+   from the --map-* tokens rather than the page palette. */
+
 .map-frame {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
 }
 
 .leaflet-map {
@@ -1104,15 +1130,15 @@ textarea::placeholder {
 }
 
 .leaflet-container {
-  background: var(--bg) !important;
+  background: var(--map-canvas) !important;
   font-family: var(--font-ui);
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  color: var(--ink);
-  background: var(--bg-card);
-  border: 1px solid var(--line-strong);
+  color: var(--map-ink);
+  background: var(--map-surface);
+  border: 1px solid var(--map-line);
   box-shadow: var(--shadow);
 }
 
@@ -1135,38 +1161,57 @@ textarea::placeholder {
 
 .memory-popup p {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--map-muted);
+}
+
+.memory-popup a {
+  color: var(--map-accent);
+  font-weight: 600;
 }
 
 .leaflet-container a.leaflet-popup-close-button {
-  color: var(--muted);
+  color: var(--map-muted);
 }
 
 .leaflet-bar a,
 .leaflet-bar a:hover {
-  color: var(--ink);
-  background: var(--bg-card);
-  border-bottom-color: var(--line);
+  color: var(--map-ink);
+  background: var(--map-surface);
+  border-bottom-color: var(--map-line);
 }
 
 .leaflet-control-attribution {
-  color: var(--muted) !important;
-  background: rgba(11, 13, 16, 0.8) !important;
+  color: var(--map-muted) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
 }
 
 .leaflet-control-attribution a {
-  color: var(--ink-soft) !important;
+  color: var(--map-accent) !important;
+}
+
+.map-pin,
+.marker-focus {
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-sizing: border-box;
+}
+
+.map-pin {
+  width: 14px !important;
+  height: 14px !important;
+  background: var(--map-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  margin-left: -7px !important;
+  margin-top: -7px !important;
 }
 
 .marker-focus {
-  width: 16px !important;
-  height: 16px !important;
-  background: var(--turquoise);
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px rgba(55, 211, 196, 0.35);
-  margin-left: -8px !important;
-  margin-top: -8px !important;
+  width: 18px !important;
+  height: 18px !important;
+  background: var(--map-accent);
+  box-shadow: 0 0 0 5px var(--map-accent-ring), 0 1px 4px rgba(0, 0, 0, 0.35);
+  margin-left: -9px !important;
+  margin-top: -9px !important;
 }
 
 .map-empty {
@@ -1179,9 +1224,11 @@ textarea::placeholder {
   justify-items: center;
   padding: 1.25rem 1.5rem;
   text-align: center;
-  background: var(--glass);
-  border: 1px solid var(--line-strong);
+  color: var(--map-ink);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--map-line);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
   backdrop-filter: blur(var(--glass-blur));
   transform: translate(-50%, -50%);
 }
@@ -1189,7 +1236,7 @@ textarea::placeholder {
 .map-empty p {
   max-width: 34ch;
   font-size: 0.82rem;
-  color: var(--muted);
+  color: var(--map-muted);
 }
 
 .map-note {
@@ -1199,10 +1246,11 @@ textarea::placeholder {
   z-index: 500;
   padding: 0.35rem 0.7rem;
   font-size: 0.75rem;
-  color: var(--ink-soft);
-  background: var(--glass);
-  border: 1px solid var(--line);
+  color: var(--map-ink);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--map-line);
   border-radius: 999px;
+  box-shadow: var(--shadow-soft);
   backdrop-filter: blur(var(--glass-blur));
 }
 
@@ -1258,7 +1306,7 @@ textarea::placeholder {
   place-items: center;
   width: 38px;
   height: 38px;
-  color: #06211f;
+  color: var(--on-accent);
   background: linear-gradient(135deg, var(--turquoise), var(--turquoise-deep));
   border-radius: 50%;
 }
@@ -1399,7 +1447,7 @@ textarea::placeholder {
   width: 100%;
   max-height: 72vh;
   object-fit: contain;
-  background: #06080b;
+  background: var(--stage-bg);
 }
 
 .detail-stage figcaption {

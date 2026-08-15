@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { BookOpen, Images, Map, MessageCircle, Menu, Clock3 } from "lucide-react";
 import { useTrip } from "../../trip/TripProvider";
 import { HealthDot } from "./HealthDot";
+import { ThemeToggle } from "./ThemeToggle";
 import { JobProgressBar } from "./JobProgressBar";
 
 const NAV_ITEMS = [
@@ -34,6 +35,7 @@ export function GlassNav({ onOpenMenu }: { onOpenMenu: () => void }) {
 
         <div className="nav-actions">
           <HealthDot />
+          <ThemeToggle />
           <button type="button" className="burger" onClick={onOpenMenu} aria-label="Open menu">
             <Menu size={20} aria-hidden="true" />
           </button>

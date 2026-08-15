@@ -4,9 +4,10 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { divIcon, type LatLngExpression, type Marker as LMarker } from "leaflet";
 import { assetUrl, type Photo } from "../../api/client";
 
-// One shared instance: a fresh icon on every render would make react-leaflet
+// One shared instance each: a fresh icon on every render would make react-leaflet
 // rebuild the marker's DOM and close the popup we just opened.
-const FOCUS_ICON = divIcon({ className: "marker-focus", iconSize: [16, 16] });
+const FOCUS_ICON = divIcon({ className: "marker-focus", iconSize: [18, 18] });
+const PIN_ICON = divIcon({ className: "map-pin", iconSize: [14, 14] });
 
 function FlyToMarker({
   photo,
@@ -55,7 +56,7 @@ export function MemoryMap({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
         />
         {focusPhoto ? (
@@ -66,9 +67,7 @@ export function MemoryMap({
             key={photo.id}
             position={[photo.latitude!, photo.longitude!]}
             ref={photo.id === focusPhotoId ? focusMarkerRef : null}
-            // Spread, never `icon={undefined}`: Leaflet copies own keys over its
-            // prototype defaults, so an explicit undefined erases the default icon.
-            {...(photo.id === focusPhotoId ? { icon: FOCUS_ICON } : {})}
+            icon={photo.id === focusPhotoId ? FOCUS_ICON : PIN_ICON}
           >
             <Popup className="memory-popup">
               <img src={assetUrl(photo.image_url)} alt="" />
