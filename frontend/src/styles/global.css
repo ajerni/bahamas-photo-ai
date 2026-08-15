@@ -440,6 +440,7 @@ textarea::placeholder {
 
 .job-progress-label {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
   margin-top: 0.35rem;
@@ -450,6 +451,34 @@ textarea::placeholder {
 .job-progress-label strong {
   font-weight: 600;
   color: var(--ink-soft);
+}
+
+.job-progress.failed .job-progress-label strong {
+  color: var(--danger);
+}
+
+.job-progress-actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.job-progress-actions button {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+
+.job-progress-actions button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--turquoise-deep);
 }
 
 /* ---------- burger sheet ---------- */

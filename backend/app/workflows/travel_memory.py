@@ -125,10 +125,9 @@ def answer_trip_question_with_gemma(
     photo_contexts = _analyzed_photo_contexts(session, trip_id)
     if not photo_contexts:
         raise WorkflowInputError("Trip has no analyzed photos for grounded Q&A")
-    if len(photo_contexts) > settings.workflow_max_qa_photos:
-        raise WorkflowInputError(
-            "Trip has too many analyzed photos for the configured Q&A context"
-        )
+    photo_contexts = _trim_qa_contexts(
+        session, trip_id, photo_contexts, settings.workflow_max_qa_photos
+    )
 
     valid_ids = {item.id for item in photo_contexts}
     trip_memory = session.get(TripMemory, trip_id)
@@ -384,6 +383,36 @@ def _analyzed_photo_contexts(session: Session, trip_id: int) -> list[AnalyzedPho
             )
         )
     return contexts
+
+
+def _trim_qa_contexts(
+    session: Session,
+    trip_id: int,
+    contexts: list[AnalyzedPhotoContext],
+    limit: int,
+) -> list[AnalyzedPhotoContext]:
+    """Fit the trip into the Q&A context window instead of refusing to answer.
+
+    Favorites are kept first, then the most recent photos. The survivors are
+    restored to chronological order so the model still reads a sequence.
+    """
+    if len(contexts) <= limit:
+        return contexts
+
+    favorite_ids = set(
+        session.exec(
+            select(Photo.id).where(
+                Photo.trip_id == trip_id,
+                Photo.is_favorite.is_(True),  # type: ignore[attr-defined]
+            )
+        ).all()
+    )
+    position = {context.id: index for index, context in enumerate(contexts)}
+    ranked = sorted(
+        contexts,
+        key=lambda context: (context.id not in favorite_ids, -position[context.id]),
+    )
+    return sorted(ranked[:limit], key=lambda context: position[context.id])
 
 
 def _trip_context(trip: Trip) -> dict[str, Any]:

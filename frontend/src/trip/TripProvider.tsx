@@ -19,6 +19,7 @@ import {
   getTrip,
   importPhotos,
   listTrips,
+  retryJob,
   updatePhoto,
   updateTrip,
   updateTripMemory,
@@ -58,6 +59,8 @@ type TripContextValue = {
   saveMemory: (payload: Parameters<typeof updateTripMemory>[1]) => Promise<void>;
   removeAllPhotos: () => Promise<void>;
   clearMemories: () => Promise<void>;
+  dismissJob: () => void;
+  retryFailedJob: () => Promise<void>;
 };
 
 const TripContext = createContext<TripContextValue | null>(null);
@@ -206,6 +209,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
         await clearTripAnalysis(tripId());
         await refresh();
         setStoryStale(false);
+      },
+      dismissJob() {
+        setJob(null);
+      },
+      async retryFailedJob() {
+        if (job === null) {
+          return;
+        }
+        setJob(await retryJob(job.id));
       }
     };
   }, [trip, health, healthError, job, loading, error, storyStale, refresh]);

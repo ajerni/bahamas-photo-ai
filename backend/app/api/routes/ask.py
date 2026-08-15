@@ -9,6 +9,7 @@ from backend.app.db.models import Trip, TripQuestion
 from backend.app.db.session import get_session
 from backend.app.schemas.ask import AskRequest, AskResponse
 from backend.app.schemas.question import TripQuestionRead
+from backend.app.workflows.client import ModelUnavailableError
 from backend.app.workflows.travel_memory import (
     WorkflowError,
     answer_trip_question_with_gemma,
@@ -25,7 +26,7 @@ def ask_trip(
 ) -> AskResponse:
     try:
         response = answer_trip_question_with_gemma(session, int(trip.id), payload.question)
-    except WorkflowError as exc:
+    except (WorkflowError, ModelUnavailableError) as exc:
         raise workflow_bad_request(exc) from exc
 
     record = TripQuestion(

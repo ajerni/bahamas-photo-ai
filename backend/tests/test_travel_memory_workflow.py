@@ -197,7 +197,7 @@ def test_missing_photo_image_raises_input_error(workflow_session):
         analyze_photo_memory(session, int(photo.id), client=FakeGemmaClient([]))
 
 
-def test_qa_rejects_context_larger_than_config(workflow_session, monkeypatch):
+def test_qa_trims_context_larger_than_config(workflow_session, monkeypatch):
     session, upload_dir = workflow_session
     monkeypatch.setenv("PMM_WORKFLOW_MAX_QA_PHOTOS", "1")
 
@@ -209,13 +209,51 @@ def test_qa_rejects_context_larger_than_config(workflow_session, monkeypatch):
     _store_photo_analysis(session, int(first_photo.id))
     _store_photo_analysis(session, int(second_photo.id))
 
-    with pytest.raises(WorkflowInputError):
-        answer_trip_question_with_gemma(
-            session,
-            int(trip.id),
-            "What happened?",
-            client=FakeGemmaClient([]),
-        )
+    # Only the newest photo survives the trim, so the dropped one is no longer
+    # valid evidence and the model gets asked again.
+    client = FakeGemmaClient(
+        [
+            _answer_json("Trimmed away.", [int(first_photo.id)]),
+            _answer_json("Still in context.", [int(second_photo.id)]),
+        ]
+    )
+
+    response = answer_trip_question_with_gemma(
+        session,
+        int(trip.id),
+        "What happened?",
+        client=client,
+    )
+
+    assert response.evidence_photo_ids == [second_photo.id]
+    assert len(client.calls) == 2
+
+
+def test_qa_trim_keeps_favorites(workflow_session, monkeypatch):
+    session, upload_dir = workflow_session
+    monkeypatch.setenv("PMM_WORKFLOW_MAX_QA_PHOTOS", "1")
+
+    from backend.app.core.config import get_settings
+
+    get_settings.cache_clear()
+    trip, first_photo = _create_trip_with_photo(session, upload_dir)
+    second_photo = _create_photo(session, int(trip.id), upload_dir, "second.jpg")
+    _store_photo_analysis(session, int(first_photo.id))
+    _store_photo_analysis(session, int(second_photo.id))
+    first_photo.is_favorite = True
+    session.add(first_photo)
+    session.commit()
+
+    client = FakeGemmaClient([_answer_json("Kept moment.", [int(first_photo.id)])])
+
+    response = answer_trip_question_with_gemma(
+        session,
+        int(trip.id),
+        "What happened?",
+        client=client,
+    )
+
+    assert response.evidence_photo_ids == [first_photo.id]
 
 
 def test_run_trip_memory_workflow_runs_fixed_sequence(workflow_session):

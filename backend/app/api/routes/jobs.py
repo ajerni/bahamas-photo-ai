@@ -42,12 +42,11 @@ def retry_job(
     job: AnalysisJob = Depends(get_job_or_404),
     session: Session = Depends(get_session),
 ) -> AnalysisJobRead:
-    from backend.app.api.routes.analysis import (
-        create_analysis_job,
-        get_gemma_client,
-        run_analysis_job,
-    )
+    from backend.app.api.routes import analysis as analysis_routes
 
-    retry = create_analysis_job(session, job.trip_id, job.mode)
-    background_tasks.add_task(run_analysis_job, int(retry.id), get_gemma_client)
+    # A failed job usually got part way, so resume the remainder rather than
+    # paying for every photo again.
+    retry = analysis_routes.queue_analysis_job(
+        session, background_tasks, job.trip_id, "missing"
+    )
     return AnalysisJobRead.model_validate(retry)

@@ -20,6 +20,10 @@ class ModelStatus:
     model_error: str | None = None
 
 
+class ModelUnavailableError(RuntimeError):
+    """The model cannot be called at all, as opposed to failing mid-request."""
+
+
 class GemmaClient(Protocol):
     def complete_json(
         self,
@@ -42,6 +46,10 @@ class OpenRouterClient:
         schema: type[SchemaT],
         options: Mapping[str, Any],
     ) -> str:
+        if not self.settings.openrouter_api_key:
+            raise ModelUnavailableError(
+                "OPENROUTER_API_KEY is not set, so the model cannot be reached."
+            )
         openai_messages = [_convert_message(m) for m in messages]
         response = httpx.post(
             f"{self.settings.openrouter_base_url}/chat/completions",
