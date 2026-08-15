@@ -24,3 +24,4 @@ def test_health_returns_app_and_model_info(client, monkeypatch):
     assert payload["model_status"] == "ready"
     assert payload["model_error"] is None
     assert payload["database"] == "sqlite"
+    assert payload["storage"] == "local"

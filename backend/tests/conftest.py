@@ -10,6 +10,7 @@ def client(tmp_path, monkeypatch):
     upload_dir = tmp_path / "uploads"
     monkeypatch.setenv("PMM_DATABASE_URL", f"sqlite:///{db_path.as_posix()}")
     monkeypatch.setenv("PMM_UPLOAD_DIR", str(upload_dir))
+    _disable_remote_storage(monkeypatch)
     # TestClient runs BackgroundTasks synchronously, so leaving this on would
     # make every import test hit the real model.
     monkeypatch.setenv("PMM_AUTO_ANALYZE_ON_IMPORT", "false")
@@ -27,3 +28,11 @@ def client(tmp_path, monkeypatch):
 
     get_settings.cache_clear()
     get_engine.cache_clear()
+
+
+def _disable_remote_storage(monkeypatch) -> None:
+    monkeypatch.setenv("PMM_S3_ENDPOINT", "")
+    monkeypatch.setenv("PMM_S3_BUCKET", "")
+    monkeypatch.setenv("PMM_S3_ACCESS_KEY", "")
+    monkeypatch.setenv("PMM_S3_SECRET_KEY", "")
+    monkeypatch.setenv("PMM_ENABLE_BASIC_AUTH", "false")

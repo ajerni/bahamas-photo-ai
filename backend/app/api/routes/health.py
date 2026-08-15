@@ -20,5 +20,5 @@ def get_health() -> dict[str, str | bool | None]:
         "model_status": model_status.model_status,
         "model_error": model_status.model_error,
         "database": settings.database_kind,
-        "storage": "local",
+        "storage": settings.storage_kind,
     }

@@ -22,3 +22,5 @@ backend/local_data/
 
 # own
 redesign.md
+docker-compose.yml
+docker-compose.ymls_example

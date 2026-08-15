@@ -1,0 +1,49 @@
+# Copy this file to docker-compose.yml on the VPS (that filename is gitignored).
+# Requires: DNS for bahamas.ernilabs.com, external Traefik network `iotnetwork`,
+# and .env with OpenRouter + MinIO + REVERSE_PROXY_USER/PASSWORD.
+#
+#   docker compose up -d --build
+#
+# Basic auth is enforced by the app (PMM_ENABLE_BASIC_AUTH) using
+# REVERSE_PROXY_USER / REVERSE_PROXY_PASSWORD. Traefik only does TLS.
+#
+# After first start, copy the SQLite file onto the volume and mirror photos:
+#   docker cp backend/local_data/private_memory_map.db bahamas:/data/private_memory_map.db
+#   python scripts/migrate_uploads_to_s3.py
+
+version: "3.7"
+
+volumes:
+  bahamas_data:
+
+networks:
+  iotnetwork:
+    external: true
+
+services:
+  bahamas:
+    build: .
+    container_name: bahamas
+    restart: always
+    env_file: .env
+    environment:
+      - PMM_DATABASE_URL=sqlite:////data/private_memory_map.db
+      - PMM_FRONTEND_DIR=/app/frontend/dist
+      - PMM_ENABLE_BASIC_AUTH=true
+      - 'PMM_CORS_ORIGINS=["https://bahamas.ernilabs.com"]'
+    volumes:
+      - bahamas_data:/data
+    networks:
+      - iotnetwork
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.bahamas-http.rule=Host(`bahamas.ernilabs.com`)
+      - traefik.http.routers.bahamas-http.entrypoints=iotnetwork
+      - traefik.http.routers.bahamas-http.middlewares=bahamas-redirect
+      - traefik.http.routers.bahamas-https.rule=Host(`bahamas.ernilabs.com`)
+      - traefik.http.routers.bahamas-https.entrypoints=websecure
+      - traefik.http.routers.bahamas-https.tls=true
+      - traefik.http.routers.bahamas-https.tls.certresolver=lets-encrypt
+      - traefik.http.services.bahamas.loadbalancer.server.port=8000
+      - traefik.http.middlewares.bahamas-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.bahamas-redirect.redirectscheme.permanent=true

@@ -54,6 +54,11 @@ def workflow_session(tmp_path, monkeypatch):
     upload_dir = tmp_path / "uploads"
     monkeypatch.setenv("PMM_DATABASE_URL", f"sqlite:///{db_path.as_posix()}")
     monkeypatch.setenv("PMM_UPLOAD_DIR", str(upload_dir))
+    monkeypatch.setenv("PMM_S3_ENDPOINT", "")
+    monkeypatch.setenv("PMM_S3_BUCKET", "")
+    monkeypatch.setenv("PMM_S3_ACCESS_KEY", "")
+    monkeypatch.setenv("PMM_S3_SECRET_KEY", "")
+    monkeypatch.setenv("PMM_ENABLE_BASIC_AUTH", "false")
 
     from backend.app.core.config import get_settings
     from backend.app.db.session import get_engine, init_db

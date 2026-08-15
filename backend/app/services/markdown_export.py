@@ -9,7 +9,7 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from backend.app.db.models import Photo, Trip, TripMemory, TripQuestion
-from backend.app.services.storage import stored_photo_path
+from backend.app.services.storage import read_photo_bytes
 
 
 def trip_markdown(
@@ -96,9 +96,11 @@ def trip_zip_bytes(
             _html_dossier(trip, photos, memory, questions, photo_names),
         )
         for photo in photos:
-            path = stored_photo_path(photo.stored_path)
-            if path.exists():
-                archive.write(path, f"photos/{photo_names[int(photo.id)]}")
+            try:
+                content = read_photo_bytes(photo.stored_path)
+            except FileNotFoundError:
+                continue
+            archive.writestr(f"photos/{photo_names[int(photo.id)]}", content)
     return payload.getvalue()
 
 

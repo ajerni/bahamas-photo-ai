@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from io import BytesIO
-from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence, TypeVar
 
 from PIL import Image, UnidentifiedImageError
@@ -11,6 +10,7 @@ from sqlmodel import Session, select
 from backend.app.core.config import Settings, get_settings
 from backend.app.db.models import Photo, PhotoAnalysis, Trip, TripMemory, utc_now
 from backend.app.schemas.ask import AskResponse
+from backend.app.services.storage import read_photo_bytes
 from backend.app.workflows.client import GemmaClient, OpenRouterClient
 from backend.app.workflows.prompts import (
     photo_analysis_prompt,
@@ -323,12 +323,13 @@ def _get_photo(session: Session, photo_id: int) -> Photo:
 
 
 def _load_image_payload(photo: Photo, settings: Settings) -> bytes:
-    image_path = _stored_photo_path(photo, settings)
-    if not image_path.exists():
-        raise WorkflowInputError(f"Stored image is missing: {photo.stored_path}")
+    try:
+        raw = read_photo_bytes(photo.stored_path, settings)
+    except FileNotFoundError as exc:
+        raise WorkflowInputError(f"Stored image is missing: {photo.stored_path}") from exc
 
     try:
-        with Image.open(image_path) as image:
+        with Image.open(BytesIO(raw)) as image:
             image.thumbnail(
                 (settings.workflow_max_image_edge_px, settings.workflow_max_image_edge_px)
             )
@@ -340,16 +341,6 @@ def _load_image_payload(photo: Photo, settings: Settings) -> bytes:
             return output.getvalue()
     except (UnidentifiedImageError, OSError) as exc:
         raise WorkflowInputError(f"Stored image is not readable: {photo.stored_path}") from exc
-
-
-def _stored_photo_path(photo: Photo, settings: Settings) -> Path:
-    upload_root = settings.upload_dir.resolve()
-    candidate = (upload_root / photo.stored_path).resolve()
-    try:
-        candidate.relative_to(upload_root)
-    except ValueError as exc:
-        raise WorkflowInputError("Stored image path escapes upload directory") from exc
-    return candidate
 
 
 def _photo_context(photo: Photo) -> PhotoContext:
