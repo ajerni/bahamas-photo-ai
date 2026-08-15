@@ -1391,7 +1391,8 @@ textarea::placeholder {
   border-radius: var(--radius-sm);
 }
 
-.history-item:hover {
+.history-item:hover,
+.history-item.is-selected {
   border-color: var(--turquoise-deep);
 }
 

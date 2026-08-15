@@ -16,6 +16,7 @@ type MemoryCompanionProps = {
   questions: TripQuestion[];
   photos: Photo[];
   onAsk: (question: string) => void;
+  onRestoreHistory: (item: TripQuestion) => void;
   onClearHistory: () => void;
 };
 
@@ -33,15 +34,24 @@ export function MemoryCompanion({
   questions,
   photos,
   onAsk,
+  onRestoreHistory,
   onClearHistory
 }: MemoryCompanionProps) {
   const [question, setQuestion] = useState(PROMPTS[0]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (question.trim()) {
+      setSelectedHistoryId(null);
       onAsk(question.trim());
     }
+  }
+
+  function restoreHistory(item: TripQuestion) {
+    setQuestion(item.question);
+    setSelectedHistoryId(item.id);
+    onRestoreHistory(item);
   }
 
   return (
@@ -123,8 +133,13 @@ export function MemoryCompanion({
               <button
                 key={item.id}
                 type="button"
-                className="history-item"
-                onClick={() => setQuestion(item.question)}
+                className={
+                  selectedHistoryId === item.id
+                    ? "history-item is-selected"
+                    : "history-item"
+                }
+                aria-pressed={selectedHistoryId === item.id}
+                onClick={() => restoreHistory(item)}
               >
                 <strong>{item.question}</strong>
                 <span>{item.answer}</span>
