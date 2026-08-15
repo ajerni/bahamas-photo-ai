@@ -1,13 +1,6 @@
-# Private Memory Map
+# Bahamas 2060 - Photo AI exploration
 
-Travel memory is a local-first travel memory app. It helps you turn a
-folder of trip photos into a private, searchable memory workspace with a map,
-timeline, photo memories, trip synthesis, and grounded Q&A.
-
-The app is built around a simple privacy promise: your photos, metadata,
-database, and Gemma workflow run locally. The current implementation uses a
-FastAPI backend, SQLite metadata store, local image uploads, a React workspace,
-and an Ollama-hosted Gemma vision model.
+working on the redesing
 
 ## What It Does
 
