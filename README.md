@@ -1,166 +1,109 @@
-# Bahamas 2060 - Photo AI exploration
+# Private Memory Map
 
-working on the redesing
+Private travel-memory workstation: import trip photos, map GPS pins from EXIF,
+run a fixed vision workflow, browse memories, ask grounded questions, and export
+a Markdown/ZIP dossier.
 
-## What It Does
-
-- Create trips and attach notes.
-- Upload travel photos to local storage.
-- Skip duplicate imports and report rejected files.
-- Extract EXIF timestamps and GPS coordinates when available.
-- Show precise map pins only when coordinates exist in metadata.
-- Run a fixed Gemma workflow to analyze photos and synthesize trip memory.
-- Analyze all photos or only newly imported photos.
-- Browse generated captions, scenes, moods, objects, activities, sensory
-  details, interest signals, and uncertainty notes.
-- Ask trip-level questions and receive answers grounded in evidence photo IDs.
-- Search and filter local trip memories.
-- Edit trip details, favorite photos, choose a cover, clear analysis, and delete
-  local trips or photos.
-- Export Markdown or a self-contained ZIP dossier with HTML, metadata, and
-  copied photos.
-
-## Product Shape
-
-Private Memory Map is not a social travel app and not a cloud photo library. It
-is a private memory workstation for looking back at personal trips.
-
-The core experience is:
+It is not a social app. Map coordinates come from EXIF/GPS only. The model can
+describe visible scenes; it should not invent exact dates, events, or coordinates.
 
 ```text
 Create a trip
-  -> Import photos
-  -> Skip duplicates and review import results
+  -> Import photos (skip duplicates)
   -> Review map and timeline
-  -> Run local Gemma analysis
+  -> Analyze photos (OpenRouter vision)
   -> Read generated memories
-  -> Ask grounded questions about the trip
-  -> Refine, search, and export a private dossier
+  -> Ask grounded questions
+  -> Export a private dossier
 ```
 
-The app intentionally avoids guessing precise locations from image content.
-Map coordinates come from EXIF/GPS metadata only. Gemma can describe visible
-places and scenes, but it should not invent exact dates, events, or coordinates.
-
-## Local LLM Workflow
-
-The Gemma integration is a deterministic workflow, not an agent.
-
-Python controls the sequence:
-
-1. Load stored photo records and metadata.
-2. Resize image payloads for local model input.
-3. Call Gemma for structured photo analysis.
-4. Validate and store the model output.
-5. Call Gemma for trip-level synthesis.
-6. Call Gemma for grounded Q&A using stored photo analyses and trip memory.
-
-Gemma performs the reasoning at fixed checkpoints. It does not choose tools,
-call APIs, or control application flow.
-
-Each LLM step follows the same pattern:
-
-- System instruction
-- Prompt builder
-- Structured output schema
-
-The workflow code lives in `backend/app/workflows/`.
-
-## Repository Layout
-
-```text
-backend/
-  app/
-    api/routes/       FastAPI route modules
-    core/             settings and runtime paths
-    db/               SQLModel database setup and tables
-    schemas/          request and response models
-    services/         upload, EXIF, storage, and model adapters
-    workflows/        prompts, schemas, and deterministic Gemma workflow
-  tests/              backend tests
-frontend/
-  src/
-    api/              typed API client
-    app/              top-level React app
-    components/       upload, map, timeline, photo, and insights UI
-    pages/            main trip workspace
-scripts/              local reset and real-model smoke utilities
-ollama_modelfiles/    local model setup assets
-```
-
-Runtime files are ignored by git:
-
-```text
-backend/local_data/private_memory_map.db
-backend/local_data/uploads/
-frontend/node_modules/
-frontend/dist/
-```
+Live: [https://bahamas.ernilabs.com](https://bahamas.ernilabs.com) (HTTP basic auth).
 
 ## Requirements
 
+**Local**
+
 - Python 3.12+
 - Node.js 20+
-- Ollama
-- A local Gemma vision model, configured by default as `gemma4:e4b-128k`
+- An [OpenRouter](https://openrouter.ai) API key (vision model, default `google/gemini-3.7-flash`)
 
-The app can be built and tested without running the real local model. Automated
-backend tests use fake Gemma clients.
+**Live** (already running this way)
 
-## Setup
+- VPS with Docker + Traefik on the external network `iotnetwork`
+- DNS: `bahamas.ernilabs.com` → that VPS
+- MinIO S3 API at `https://s3.wineagent.ch`, private bucket `bahamas`
+- SQLite file on a Docker volume
 
-Create and activate the Python environment:
+Automated tests do not call the real model.
+
+## Local setup
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-```
 
-Install frontend dependencies:
-
-```bash
 cd frontend
 npm install
 cd ..
+
+cp .env.example .env
+# set OPENROUTER_API_KEY in .env
 ```
 
-## Run Locally
+Leave the `PMM_S3_*` keys empty for local disk storage under
+`backend/local_data/uploads` and SQLite at
+`backend/local_data/private_memory_map.db`.
 
-Start the backend:
+If `PMM_S3_ENDPOINT`, `PMM_S3_BUCKET`, `PMM_S3_ACCESS_KEY`, and
+`PMM_S3_SECRET_KEY` are all set, local runs write photos to MinIO instead.
+Use the **S3 API host** (`https://s3.wineagent.ch`), not the MinIO console
+(`https://minio.wineagent.ch`).
+
+## Run locally
+
+Backend (from the repo root):
 
 ```bash
 .venv/bin/python -m uvicorn backend.app.main:app --reload --port 8000
 ```
 
-Start the frontend:
+Frontend:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Open the Vite URL, usually `http://localhost:5173`.
-
-The Analyze button starts a local background job. The frontend polls job
-progress and refreshes the trip when analysis completes.
+Open `http://localhost:5173`. The Vite app talks to `http://localhost:8000`.
+Analyze runs as an in-process background job; the UI polls until it finishes.
 
 ## Configuration
 
-Common environment variables:
+Copy [`.env.example`](.env.example). Common keys:
 
 ```text
-PMM_GEMMA_MODEL=gemma4:e4b-128k
-PMM_WORKFLOW_TEMPERATURE=0
-PMM_WORKFLOW_NUM_CTX=32768
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=google/gemini-3.7-flash
+
+PMM_DATABASE_URL=sqlite:///backend/local_data/private_memory_map.db
+PMM_UPLOAD_DIR=backend/local_data/uploads
+
+PMM_S3_ENDPOINT=          # empty = local disk; live uses https://s3.wineagent.ch
+PMM_S3_BUCKET=
+PMM_S3_ACCESS_KEY=
+PMM_S3_SECRET_KEY=
+
+REVERSE_PROXY_USER=       # used live with PMM_ENABLE_BASIC_AUTH=true
+REVERSE_PROXY_PASSWORD=
+
+PMM_AUTO_ANALYZE_ON_IMPORT=true
 PMM_WORKFLOW_MAX_IMAGE_EDGE_PX=1280
-PMM_WORKFLOW_RETRY_INVALID_JSON=1
 PMM_WORKFLOW_MAX_QA_PHOTOS=60
-PMM_PROMPT_VERSION=travel-memory-v1
 ```
 
-Frontend API base URL:
+Frontend override (local Vite only; production build uses same-origin `/api`):
 
 ```text
 VITE_API_BASE_URL=http://localhost:8000
@@ -168,47 +111,119 @@ VITE_API_BASE_URL=http://localhost:8000
 
 ## Test
 
-Backend:
-
 ```bash
 .venv/bin/python -m pytest backend/tests
-```
 
-Frontend:
-
-```bash
 cd frontend
 npm run build
 ```
 
-## Local Demo Utilities
-
-Reset the local SQLite database and uploaded files:
+## Local demo utilities
 
 ```bash
 .venv/bin/python scripts/reset_local_data.py --yes
-```
-
-Run the real Gemma workflow against one image:
-
-```bash
+.venv/bin/python scripts/seed_demo_trip.py
 .venv/bin/python scripts/smoke_test_real_workflow.py /path/to/travel-photo.jpg
 ```
 
-The smoke script depends on local model availability and hardware speed, so it
-is not part of automated tests.
+`seed_demo_trip.py --replace` recreates the seeded trip. The smoke script calls
+the real OpenRouter model and is not part of CI.
 
-Seed a small synthetic trip without calling Gemma:
+Mirror local `backend/local_data/uploads/` into the configured S3 bucket
+(keys stay `trip_{id}/{uuid}.ext`):
 
 ```bash
-.venv/bin/python scripts/seed_demo_trip.py
+.venv/bin/python scripts/migrate_uploads_to_s3.py
 ```
 
-Use `--replace` to recreate the seeded demo trip.
+## Live setup
 
-## API Surface
+Production is one Docker container behind existing Traefik.
 
-- `GET /api/health`
+| Piece | Where |
+|---|---|
+| Public URL | `https://bahamas.ernilabs.com` |
+| TLS + HTTP→HTTPS | Traefik (`iotnetwork`, Let’s Encrypt) |
+| App + SPA | image from [`Dockerfile`](Dockerfile), port 8000 |
+| Auth | app HTTP basic auth (`REVERSE_PROXY_USER` / `REVERSE_PROXY_PASSWORD`) |
+| Metadata DB | SQLite volume `bahamas_data` → `/data/private_memory_map.db` |
+| Photos | MinIO bucket `bahamas` via `https://s3.wineagent.ch` (path-style S3) |
+| Browser never talks to MinIO | FastAPI streams `/uploads/...` so basic auth covers originals |
+
+Compose template: [`docker-compose.yml_example`](docker-compose.yml_example).
+On the VPS that file is copied to `docker-compose.yml` (gitignored).
+
+### What to upload
+
+Upload source + `.env` + the SQLite file. **Do not** upload `uploads/`; photos
+already live in MinIO.
+
+Skip `.venv/`, `node_modules/`, and `frontend/dist/` (the image builds them).
+
+```bash
+# from this repo on your machine
+rsync -avz \
+  --exclude '.venv' --exclude 'node_modules' --exclude 'frontend/dist' \
+  --exclude 'backend/local_data/uploads' \
+  ./ user@vps:~/bahamas-photo-ai/
+```
+
+### On the VPS
+
+```bash
+cd ~/bahamas-photo-ai
+cp docker-compose.yml_example docker-compose.yml
+# confirm .env has PMM_S3_ENDPOINT=https://s3.wineagent.ch
+docker compose up -d --build
+docker cp backend/local_data/private_memory_map.db bahamas:/data/private_memory_map.db
+docker restart bahamas
+```
+
+Open `https://bahamas.ernilabs.com` and sign in with the reverse-proxy user and
+password.
+
+## How analysis works
+
+Python owns the sequence; the model only fills structured JSON at fixed steps:
+
+1. Load photo records and stored image bytes (disk or S3).
+2. Resize for the vision payload.
+3. Photo analysis → validate → store.
+4. Trip-level synthesis.
+5. Grounded Q&A from stored analyses + trip memory.
+
+Code: `backend/app/workflows/`.
+
+## Repository layout
+
+```text
+backend/
+  app/
+    api/routes/       FastAPI routes (including GET /uploads)
+    core/             settings, basic auth
+    db/               SQLModel tables
+    schemas/          request and response models
+    services/         local disk or MinIO storage, EXIF, export
+    workflows/        prompts, schemas, OpenRouter client
+  tests/
+frontend/             Vite + React SPA
+scripts/              reset, seed, smoke test, S3 migrate
+Dockerfile            multi-stage: SPA build + uvicorn
+docker-compose.yml_example
+```
+
+Gitignored runtime data:
+
+```text
+backend/local_data/private_memory_map.db
+backend/local_data/uploads/
+.env
+docker-compose.yml
+```
+
+## API
+
+- `GET /api/health` (includes `"storage": "local"` or `"s3"`)
 - `POST /api/trips`
 - `GET /api/trips`
 - `GET /api/trips/{trip_id}`
@@ -230,6 +245,7 @@ Use `--replace` to recreate the seeded demo trip.
 - `DELETE /api/trips/{trip_id}`
 - `GET /api/trips/{trip_id}/export.md`
 - `GET /api/trips/{trip_id}/export.zip`
+- `GET /uploads/{stored_path}` (photo bytes from disk or MinIO)
 
 ## License
 
