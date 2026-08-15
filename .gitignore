@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Local data (uploads, sqlite)
+backend/local_data/
+
+# Secrets
+.env
+.env.*
+!.env.example
