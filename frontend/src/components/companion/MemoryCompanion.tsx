@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { BrainCircuit, MessageCircle, Send } from "lucide-react";
+import { BrainCircuit, MessageCircle, Send, Trash2 } from "lucide-react";
 import {
   assetUrl,
   type AskResponse,
@@ -16,6 +16,7 @@ type MemoryCompanionProps = {
   questions: TripQuestion[];
   photos: Photo[];
   onAsk: (question: string) => void;
+  onClearHistory: () => void;
 };
 
 const PROMPTS = [
@@ -31,7 +32,8 @@ export function MemoryCompanion({
   askError,
   questions,
   photos,
-  onAsk
+  onAsk,
+  onClearHistory
 }: MemoryCompanionProps) {
   const [question, setQuestion] = useState(PROMPTS[0]);
 
@@ -102,7 +104,18 @@ export function MemoryCompanion({
 
       {questions.length > 0 ? (
         <div className="question-history">
-          <span className="soft-kicker">Asked before</span>
+          <div className="question-history-header">
+            <span className="soft-kicker">Asked before</span>
+            <button
+              type="button"
+              className="ghost-action"
+              onClick={onClearHistory}
+              title="Clear history"
+            >
+              <Trash2 size={13} aria-hidden="true" />
+              Clear
+            </button>
+          </div>
           {[...questions]
             .slice(-5)
             .reverse()
@@ -110,6 +123,7 @@ export function MemoryCompanion({
               <button
                 key={item.id}
                 type="button"
+                className="history-item"
                 onClick={() => setQuestion(item.question)}
               >
                 <strong>{item.question}</strong>

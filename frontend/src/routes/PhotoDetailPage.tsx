@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Image as ImageIcon,
   Lock,
+  Map,
   MapPin,
   Pencil,
   Pin,
@@ -306,9 +307,22 @@ export function PhotoDetailPage() {
                     )
                   }
                 >
-                  <Star size={15} aria-hidden="true" />
-                  {photo.is_favorite ? "Kept" : "Keep"}
+                  <Star
+                    size={15}
+                    aria-hidden="true"
+                    fill={photo.is_favorite ? "currentColor" : "none"}
+                  />
+                  Favourite
                 </button>
+                {photo.latitude !== null && photo.longitude !== null ? (
+                  <Link
+                    to={`/map?focus=${photo.id}`}
+                    className="chip-action"
+                  >
+                    <Map size={15} aria-hidden="true" />
+                    Show on map
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   className="chip-action"

@@ -1158,6 +1158,17 @@ textarea::placeholder {
   color: var(--ink-soft) !important;
 }
 
+.marker-focus {
+  width: 16px !important;
+  height: 16px !important;
+  background: var(--turquoise);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(55, 211, 196, 0.35);
+  margin-left: -8px !important;
+  margin-top: -8px !important;
+}
+
 .map-empty {
   position: absolute;
   top: 50%;
@@ -1316,7 +1327,13 @@ textarea::placeholder {
   gap: 0.5rem;
 }
 
-.question-history button {
+.question-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-item {
   display: grid;
   gap: 0.2rem;
   padding: 0.7rem 0.9rem;
@@ -1326,15 +1343,15 @@ textarea::placeholder {
   border-radius: var(--radius-sm);
 }
 
-.question-history button:hover {
+.history-item:hover {
   border-color: var(--turquoise-deep);
 }
 
-.question-history strong {
+.history-item strong {
   font-size: 0.87rem;
 }
 
-.question-history button > span {
+.history-item > span {
   display: -webkit-box;
   overflow: hidden;
   font-size: 0.8rem;

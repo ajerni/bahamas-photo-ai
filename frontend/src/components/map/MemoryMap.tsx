@@ -1,22 +1,53 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { divIcon, type LatLngExpression, type Marker as LMarker } from "leaflet";
 import { assetUrl, type Photo } from "../../api/client";
 
-export function MemoryMap({ photos }: { photos: Photo[] }) {
+// One shared instance: a fresh icon on every render would make react-leaflet
+// rebuild the marker's DOM and close the popup we just opened.
+const FOCUS_ICON = divIcon({ className: "marker-focus", iconSize: [16, 16] });
+
+function FlyToMarker({
+  photo,
+  markerRef
+}: {
+  photo: Photo;
+  markerRef: React.RefObject<LMarker | null>;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo([photo.latitude!, photo.longitude!], 14, { duration: 1 });
+    const timer = window.setTimeout(() => markerRef.current?.openPopup(), 1100);
+    return () => window.clearTimeout(timer);
+  }, [map, photo.id, photo.latitude, photo.longitude, markerRef]);
+  return null;
+}
+
+export function MemoryMap({
+  photos,
+  focusPhotoId
+}: {
+  photos: Photo[];
+  focusPhotoId?: number | null;
+}) {
   const locatedPhotos = photos.filter(
     (photo) => photo.latitude !== null && photo.longitude !== null
   );
   const unlocatedCount = photos.length - locatedPhotos.length;
-  const focusPhoto = locatedPhotos[0] ?? null;
-  const center: LatLngExpression = focusPhoto
-    ? [focusPhoto.latitude!, focusPhoto.longitude!]
+  const focusPhoto = focusPhotoId
+    ? (locatedPhotos.find((p) => p.id === focusPhotoId) ?? null)
+    : null;
+  const initialPhoto = focusPhoto ?? locatedPhotos[0] ?? null;
+  const center: LatLngExpression = initialPhoto
+    ? [initialPhoto.latitude!, initialPhoto.longitude!]
     : [25.03, -77.4];
+  const focusMarkerRef = useRef<LMarker | null>(null);
 
   return (
     <div className="map-frame">
       <MapContainer
-        key={`${focusPhoto?.id ?? "none"}-${locatedPhotos.length}`}
+        key={`${locatedPhotos[0]?.id ?? "none"}-${locatedPhotos.length}`}
         center={center}
         zoom={locatedPhotos.length > 0 ? 11 : 6}
         scrollWheelZoom
@@ -27,8 +58,18 @@ export function MemoryMap({ photos }: { photos: Photo[] }) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
         />
+        {focusPhoto ? (
+          <FlyToMarker photo={focusPhoto} markerRef={focusMarkerRef} />
+        ) : null}
         {locatedPhotos.map((photo) => (
-          <Marker key={photo.id} position={[photo.latitude!, photo.longitude!]}>
+          <Marker
+            key={photo.id}
+            position={[photo.latitude!, photo.longitude!]}
+            ref={photo.id === focusPhotoId ? focusMarkerRef : null}
+            // Spread, never `icon={undefined}`: Leaflet copies own keys over its
+            // prototype defaults, so an explicit undefined erases the default icon.
+            {...(photo.id === focusPhotoId ? { icon: FOCUS_ICON } : {})}
+          >
             <Popup className="memory-popup">
               <img src={assetUrl(photo.image_url)} alt="" />
               <strong>{photo.analysis?.memory_caption || photo.filename}</strong>

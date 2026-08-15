@@ -24,6 +24,7 @@ import {
   updateTrip,
   updateTripMemory,
   clearTripAnalysis,
+  clearTripQuestions,
   type AnalysisJob,
   type HealthResponse,
   type Photo,
@@ -59,6 +60,7 @@ type TripContextValue = {
   saveMemory: (payload: Parameters<typeof updateTripMemory>[1]) => Promise<void>;
   removeAllPhotos: () => Promise<void>;
   clearMemories: () => Promise<void>;
+  clearQuestions: () => Promise<void>;
   dismissJob: () => void;
   retryFailedJob: () => Promise<void>;
 };
@@ -209,6 +211,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
         await clearTripAnalysis(tripId());
         await refresh();
         setStoryStale(false);
+      },
+      async clearQuestions() {
+        await clearTripQuestions(tripId());
+        await refresh();
       },
       dismissJob() {
         setJob(null);

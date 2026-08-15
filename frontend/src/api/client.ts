@@ -281,6 +281,10 @@ export async function deletePhoto(photoId: number): Promise<void> {
   await requestNoContent(`/api/photos/${photoId}`, { method: "DELETE" });
 }
 
+export async function clearTripQuestions(tripId: number): Promise<void> {
+  await requestNoContent(`/api/trips/${tripId}/questions`, { method: "DELETE" });
+}
+
 export async function clearTripAnalysis(tripId: number): Promise<void> {
   await requestNoContent(`/api/trips/${tripId}/analysis`, { method: "DELETE" });
 }

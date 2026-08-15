@@ -1,27 +1,16 @@
 import { useMemo, useState } from "react";
 import type { Photo } from "../api/client";
 
-export type FilterKey =
-  | "favorites"
-  | "mapped"
-  | "noGps"
-  | "analyzed"
-  | "needsAnalysis";
+export type FilterKey = "favorites" | "noGps";
 
 export const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
-  { key: "favorites", label: "Kept" },
-  { key: "mapped", label: "On map" },
-  { key: "noGps", label: "No GPS" },
-  { key: "analyzed", label: "Remembered" },
-  { key: "needsAnalysis", label: "Not yet" }
+  { key: "favorites", label: "Favourite" },
+  { key: "noGps", label: "No GPS" }
 ];
 
 const EMPTY_FILTERS: Record<FilterKey, boolean> = {
   favorites: false,
-  mapped: false,
-  noGps: false,
-  analyzed: false,
-  needsAnalysis: false
+  noGps: false
 };
 
 export function usePhotoFilters(photos: Photo[]) {
@@ -59,22 +48,12 @@ function filterPhotos(
   const normalizedQuery = query.trim().toLowerCase();
 
   return photos.filter((photo) => {
-    const analysis = photo.analysis;
     const mapped = photo.latitude !== null && photo.longitude !== null;
 
     if (filters.favorites && !photo.is_favorite) {
       return false;
     }
-    if (filters.mapped && !mapped) {
-      return false;
-    }
     if (filters.noGps && mapped) {
-      return false;
-    }
-    if (filters.analyzed && analysis === null) {
-      return false;
-    }
-    if (filters.needsAnalysis && analysis !== null) {
       return false;
     }
     return normalizedQuery === "" || photoText(photo).includes(normalizedQuery);

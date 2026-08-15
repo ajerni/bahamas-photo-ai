@@ -1,8 +1,13 @@
+import { useSearchParams } from "react-router-dom";
 import { MemoryMap } from "../components/map/MemoryMap";
 import { useTrip } from "../trip/TripProvider";
 
 export function MapPage() {
   const { photos } = useTrip();
+  const [searchParams] = useSearchParams();
+  const focusPhotoId = searchParams.get("focus")
+    ? Number(searchParams.get("focus"))
+    : null;
   const mapped = photos.filter(
     (photo) => photo.latitude !== null && photo.longitude !== null
   ).length;
@@ -17,7 +22,7 @@ export function MapPage() {
         <span className="count-pill">{mapped} pinned</span>
       </div>
 
-      <MemoryMap photos={photos} />
+      <MemoryMap photos={photos} focusPhotoId={focusPhotoId} />
     </div>
   );
 }

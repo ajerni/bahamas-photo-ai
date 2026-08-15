@@ -40,6 +40,19 @@ def ask_trip(
     return response
 
 
+@router.delete("/{trip_id}/questions", status_code=204)
+def clear_trip_questions(
+    trip: Trip = Depends(get_trip_or_404),
+    session: Session = Depends(get_session),
+) -> None:
+    questions = session.exec(
+        select(TripQuestion).where(TripQuestion.trip_id == int(trip.id))
+    ).all()
+    for question in questions:
+        session.delete(question)
+    session.commit()
+
+
 @router.get("/{trip_id}/questions", response_model=list[TripQuestionRead])
 def list_trip_questions(
     trip: Trip = Depends(get_trip_or_404),
